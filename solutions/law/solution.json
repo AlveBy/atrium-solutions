@@ -1,16 +1,6 @@
 {
     "name": "law",
-    "label": {
-        "en": "Law firm",
-        "de": "Anwaltskanzlei",
-        "ru": "Юридическая фирма"
-    },
-    "description": {
-        "en": "A business law firm: practice areas, lawyers by department, insights, offices on the map, a consultation request, fees explained and clients' words.",
-        "de": "Eine Wirtschaftskanzlei: Tätigkeitsbereiche, Anwälte nach Abteilungen, Fachbeiträge, Büros auf der Karte, Beratungsanfrage, Honorare erklärt und Stimmen von Mandanten.",
-        "ru": "Юридическая фирма для бизнеса: практики, юристы по отделам, статьи, офисы на карте, запись на консультацию, ответы о стоимости и отзывы клиентов."
-    },
-    "brand": "Vellmar Oake",
+    "brand": "Whitaker Brennan LLP",
     "skin": "law",
     "modules": [
         "alveby/atrium-pages",
@@ -21,47 +11,54 @@
         "alveby/atrium-faq",
         "alveby/atrium-reviews"
     ],
-    "languages": ["en", "de", "ru"],
     "seeder": "Atrium\\Solutions\\Seeders\\LawSeeder",
-    "labels": {
-        "en": {
-            "atrium-team::team.modules.members": "Lawyers",
-            "atrium-news::news.module": "Insights",
-            "atrium-stores::stores.module": "Offices"
-        },
-        "de": {
-            "atrium-team::team.modules.members": "Anwälte",
-            "atrium-news::news.module": "Fachbeiträge",
-            "atrium-stores::stores.module": "Büros"
-        },
-        "ru": {
-            "atrium-team::team.modules.members": "Юристы",
-            "atrium-news::news.module": "Статьи",
-            "atrium-stores::stores.module": "Офисы"
-        }
-    },
     "urls": {
         "Atrium\\Team\\Models\\Member": "lawyers",
         "Atrium\\News\\Models\\News": "insights",
         "Atrium\\Stores\\Models\\Store": "offices"
     },
     "menu": [
-        {"page": "practice"},
-        {"module": "Atrium\\Team\\Models\\Member"},
-        {"module": "Atrium\\News\\Models\\News"},
-        {"page": "about"},
-        {"module": "Atrium\\Stores\\Models\\Store"}
+        {
+            "page": "practice"
+        },
+        {
+            "module": "Atrium\\Team\\Models\\Member"
+        },
+        {
+            "module": "Atrium\\News\\Models\\News"
+        },
+        {
+            "page": "about"
+        },
+        {
+            "module": "Atrium\\Stores\\Models\\Store"
+        }
     ],
-    "pages": ["/", "/practice", "/practice/disputes", "/lawyers", "/lawyers/ines-hartmann", "/insights", "/offices", "/faq"],
+    "pages": [
+        "/",
+        "/practice",
+        "/practice/disputes",
+        "/lawyers",
+        "/insights",
+        "/offices",
+        "/faq"
+    ],
     "palette": {
         "background": "#f6f2ea",
         "text": "#1c2430",
         "accent": "#7b2d26"
     },
-    "fonts": ["Fraunces", "Inter"],
+    "fonts": [
+        "Fraunces",
+        "Inter"
+    ],
     "screenshots": {
         "desktop": "screenshot.png",
         "mobile": "screenshot-mobile.png"
     },
-    "tags": ["services", "b2b", "team"]
+    "tags": [
+        "services",
+        "b2b",
+        "team"
+    ]
 }

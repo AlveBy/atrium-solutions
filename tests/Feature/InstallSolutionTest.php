@@ -62,7 +62,7 @@ final class InstallSolutionTest extends TestCase
 
         $env = (string) file_get_contents($this->root.'/.env');
         $this->assertStringContainsString('ATRIUM_SOLUTION=law', $env);
-        $this->assertStringContainsString('APP_NAME="Vellmar Oake"', $env);
+        $this->assertStringContainsString('APP_NAME="Whitaker Brennan LLP"', $env);
         $this->assertSame('law', config('atrium-solutions.installed'));
 
         $this->assertTrue(Page::query()->where('code', 'practice')->exists());
@@ -73,6 +73,14 @@ final class InstallSolutionTest extends TestCase
             ->expectsOutputToContain('already has content')
             ->assertSuccessful();
         $this->assertSame(6, Member::query()->count());
+    }
+
+    public function test_the_site_is_named_after_the_business_of_the_installer_s_country(): void
+    {
+        $this->artisan('atrium:solution:install', ['name' => 'law', '--locale' => 'de'])->assertSuccessful();
+
+        $this->assertStringContainsString('APP_NAME="Brandt Vogler Rechtsanwälte PartG mbB"', (string) file_get_contents($this->root.'/.env'));
+        $this->assertSame('Brandt Vogler Rechtsanwälte PartG mbB', config('app.name'));
     }
 
     public function test_keep_modules_leaves_the_others_on(): void

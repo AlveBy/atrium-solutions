@@ -43,6 +43,11 @@ final class SolutionsServiceProvider extends ServiceProvider
 
             foreach ($solution === null ? [] : $solution->labels as $locale => $lines) {
                 Labels::apply($translator, $locale, $lines);
+
+                // The site sets the content language as the locale: pt-br.
+                if (Support\Country::languageOf($locale) !== $locale) {
+                    Labels::apply($translator, Support\Country::languageOf($locale), $lines);
+                }
             }
         });
 

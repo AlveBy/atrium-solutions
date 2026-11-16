@@ -19,7 +19,7 @@ use Atrium\Team\Models\Member;
 
 /**
  * The law firm as a visitor sees it once `atrium:solution:install law` ran:
- * its pages, its names for the modules, its menu, in three languages.
+ * its pages, its names for the modules, its menu, in every language.
  */
 final class LawSiteTest extends TestCase
 {
@@ -54,11 +54,11 @@ final class LawSiteTest extends TestCase
             ->assertOk()
             ->assertSee('<h1>Lawyers</h1>', false)
             ->assertSee('Partners')
-            ->assertSee('Ines Hartmann');
+            ->assertSee('Emily Whitaker');
 
         $this->get('/team')->assertNotFound();
-        $this->get('/offices')->assertOk()->assertSee('Harbour office');
-        $this->get('/offices/harbour')->assertOk()->assertSee('Northam');
+        $this->get('/offices')->assertOk()->assertSee('Whitaker Brennan LLP, Pearl District');
+        $this->get('/offices/main')->assertOk()->assertSee('Portland, OR 97209');
         $this->get('/insights')->assertOk();
     }
 
@@ -74,9 +74,12 @@ final class LawSiteTest extends TestCase
         );
     }
 
-    public function test_the_site_speaks_german_and_russian(): void
+    public function test_the_site_speaks_every_language_with_english_first(): void
     {
-        $this->assertSame(['en', 'de', 'ru'], Language::query()->orderBy('sort')->pluck('code')->all());
+        $codes = Language::query()->orderBy('sort')->pluck('code')->all();
+
+        $this->assertCount(15, $codes);
+        $this->assertSame('en', $codes[0]);
         $this->assertSame('en', Language::query()->where('is_default', true)->value('code'));
 
         $this->get('/de/lawyers')->assertOk()->assertSee('Anwälte');

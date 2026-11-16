@@ -26,6 +26,7 @@ final class InstallSolutionCommand extends Command
 {
     protected $signature = 'atrium:solution:install
                             {name? : The solution, as atrium:solution:list names it}
+                            {--locale= : The country the site is set in, by its language (de, ja, pt_BR); the app locale when not given}
                             {--keep-modules : Leave the modules the solution does not use on}';
 
     protected $description = 'Set up a ready-made site: its modules, look, languages and content';
@@ -82,9 +83,11 @@ final class InstallSolutionCommand extends Command
         Env::set('ATRIUM_SOLUTION', $solution->name);
 
         // Page titles end in " | APP_NAME", and a fresh project is still called Laravel.
-        if (in_array(config('app.name'), [null, '', 'Laravel'], true) && $solution->brand !== '') {
-            Env::set('APP_NAME', $solution->brand);
-            config(['app.name' => $solution->brand, 'atrium.seo.title_suffix' => ' | '.$solution->brand]);
+        $brand = $solution->brandIn($this->option('locale') ?: config('app.locale'));
+
+        if (in_array(config('app.name'), [null, '', 'Laravel'], true) && $brand !== '') {
+            Env::set('APP_NAME', $brand);
+            config(['app.name' => $brand, 'atrium.seo.title_suffix' => ' | '.$brand]);
         }
         PublicUrl::forgetPaths();
 
@@ -99,7 +102,7 @@ final class InstallSolutionCommand extends Command
 
             $seeded = false;
             $this->components->task('Filling the site', function () use ($seeder, $solution, &$seeded): bool {
-                $seeded = $seeder->forSolution($solution)->setContainer($this->laravel)->__invoke() !== false;
+                $seeded = $seeder->forSolution($solution, $this->option('locale') ?: null)->setContainer($this->laravel)->__invoke() !== false;
 
                 return true;
             });

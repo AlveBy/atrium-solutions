@@ -12,18 +12,15 @@ namespace Atrium\Solutions;
 use InvalidArgumentException;
 
 /**
- * One ready-made site, as its solution.json describes it:
+ * One ready-made site, as its solution.json and content/{locale}.php
+ * describe it:
  *
  *     {
  *         "name": "law",
- *         "label": {"en": "Law firm", "de": "Anwaltskanzlei", "ru": "Юридическая фирма"},
- *         "description": {"en": "…"},
- *         "brand": "Harbour & Vale",
+ *         "brand": "Whitaker Brennan LLP",
  *         "skin": "law",
  *         "modules": ["alveby/atrium-pages", "alveby/atrium-team"],
- *         "languages": ["en", "de", "ru"],
  *         "seeder": "Atrium\\Solutions\\Seeders\\LawSeeder",
- *         "labels": {"en": {"atrium-team::team.modules.members": "Lawyers"}},
  *         "palette": {"background": "#f7f4ee", "text": "#1d232b", "accent": "#7a2e2e"},
  *         "fonts": ["Fraunces", "Inter"],
  *         "screenshots": {"desktop": "screenshot.png", "mobile": "screenshot-mobile.png"},
@@ -32,8 +29,10 @@ use InvalidArgumentException;
  *         "menu": [{"page": "practice"}, {"module": "Atrium\\Team\\Models\\Member"}]
  *     }
  *
- * `labels` rename what the modules call themselves, in the admin and on the
- * site. `pages` are the addresses worth opening: the smoke test opens them
+ * The label, the description, the languages and `labels` (what the modules
+ * are called, in the admin and on the site) come from the content files;
+ * the same keys in solution.json are the fallback of a solution without
+ * them. `pages` are the addresses worth opening: the smoke test opens them
  * and the catalogue lists them. `urls` move a module's pages to another
  * prefix (/offices rather than /stores). `menu` is the site's menu: pages of
  * the Pages module by code and module lists, in this order.
@@ -53,6 +52,7 @@ final class Solution
      * @param  array<int,string>  $tags
      * @param  array<class-string,string>  $urls  model => prefix
      * @param  array<int,array<string,string>>  $menu  {"page": code} or {"module": model}
+     * @param  array<string,string>  $brands  locale => the business set in that country
      */
     public function __construct(
         public readonly string $name,
@@ -72,6 +72,7 @@ final class Solution
         public readonly array $tags = [],
         public readonly array $urls = [],
         public readonly array $menu = [],
+        public readonly array $brands = [],
     ) {}
 
     public static function fromFile(string $file): self
@@ -84,17 +85,40 @@ final class Solution
 
         $strings = static fn (mixed $value): array => array_map('strval', array_filter((array) $value, 'is_scalar'));
 
+        // A solution with content/{locale}.php files speaks the languages it
+        // has files for, and names its modules in their `labels`.
+        $languages = [];
+        $labels = array_filter((array) ($data['labels'] ?? []), 'is_array');
+        $label = (array) ($data['label'] ?? [$data['name']]);
+        $description = (array) ($data['description'] ?? []);
+        $brands = [];
+
+        foreach (Support\Country::LOCALES as $locale) {
+            $texts = dirname($file).'/content/'.$locale.'.php';
+
+            if (is_file($texts)) {
+                $languages[] = $locale;
+                $content = require $texts;
+                $labels[$locale] = [...(array) ($content['labels'] ?? []), ...($labels[$locale] ?? [])];
+                $label[$locale] = $content['catalogue']['label'] ?? $label[$locale] ?? null;
+                $description[$locale] = $content['catalogue']['description'] ?? $description[$locale] ?? null;
+                $brands[$locale] = $content['brand'] ?? null;
+            }
+        }
+
+        $languages = $languages ?: ($data['languages'] ?? ['en']);
+
         return new self(
             name: $data['name'],
             path: dirname($file),
-            label: $strings($data['label'] ?? [$data['name']]),
-            description: $strings($data['description'] ?? []),
+            label: $strings($label),
+            description: $strings($description),
             brand: (string) ($data['brand'] ?? ''),
             skin: isset($data['skin']) ? (string) $data['skin'] : null,
             modules: array_values(array_map('strtolower', $strings($data['modules'] ?? []))),
-            languages: array_values($strings($data['languages'] ?? ['en'])) ?: ['en'],
+            languages: array_values($strings($languages)) ?: ['en'],
             seeder: isset($data['seeder']) ? (string) $data['seeder'] : null,
-            labels: array_map($strings, array_filter((array) ($data['labels'] ?? []), 'is_array')),
+            labels: array_map($strings, $labels),
             palette: $strings($data['palette'] ?? []),
             fonts: array_values($strings($data['fonts'] ?? [])),
             screenshots: $strings($data['screenshots'] ?? []),
@@ -102,7 +126,17 @@ final class Solution
             tags: array_values($strings($data['tags'] ?? [])),
             urls: $strings($data['urls'] ?? []),
             menu: array_values(array_map($strings, array_filter((array) ($data['menu'] ?? []), 'is_array'))),
+            brands: $strings($brands),
         );
+    }
+
+    /**
+     * The business's name when the site is set in the country of a locale:
+     * a German law firm for de.
+     */
+    public function brandIn(?string $locale): string
+    {
+        return $this->brands[Support\Country::normalise($locale)] ?? $this->brands['en'] ?? $this->brand;
     }
 
     /**

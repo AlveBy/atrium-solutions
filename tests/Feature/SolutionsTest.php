@@ -12,6 +12,7 @@ namespace Atrium\Solutions\Tests\Feature;
 use Atrium\Solutions\Solution;
 use Atrium\Solutions\Solutions;
 use Atrium\Solutions\SolutionSeeder;
+use Atrium\Solutions\Support\Country;
 use Atrium\Solutions\Tests\TestCase;
 use Illuminate\Support\Facades\Artisan;
 use InvalidArgumentException;
@@ -87,7 +88,7 @@ final class SolutionsTest extends TestCase
         $solutions = $this->app->make(Solutions::class);
 
         $this->assertArrayHasKey('law', $solutions->all());
-        $this->assertSame('Vellmar Oake', $solutions->find(' LAW ')?->brand);
+        $this->assertSame('Whitaker Brennan LLP', $solutions->find(' LAW ')?->brand);
         $this->assertNull($solutions->find('nothing'));
         $this->assertNull($solutions->installed());
     }
@@ -127,7 +128,7 @@ final class SolutionsTest extends TestCase
         $this->assertIsArray($catalogue);
         $law = collect($catalogue)->firstWhere('name', 'law');
         $this->assertSame('php artisan atrium:solution:install law', $law['install']);
-        $this->assertSame(['en', 'de', 'ru'], $law['languages']);
+        $this->assertSame(Country::LOCALES, $law['languages']);
         $this->assertContains('alveby/atrium-team', $law['modules']);
     }
 }

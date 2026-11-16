@@ -14,15 +14,22 @@ use Atrium\Admin\Modules\DemoSeeder;
 use Atrium\Admin\Modules\Soft;
 use Atrium\Admin\Support\ContentLanguages;
 use Atrium\Admin\Support\Sites;
+use Atrium\Solutions\Support\Country;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Arr;
 
 /**
  * The content of a ready-made site. A solution fills the modules itself
  * rather than running their own demo: a law firm's news are not a shop's.
  *
- * Texts are given per language, `['en' => …, 'de' => …, 'ru' => …]`; a
- * module that is not installed is skipped by the helpers, so a solution
- * still installs with one module less.
+ * The site is set in the country of the installer's locale: a German
+ * installation is a German business. Its texts live in the solution's
+ * `content/{locale}.php`, one file per language, each written for its own
+ * country; the main locale's file names the business, and the other files
+ * are its translations, speaking of it through placeholders (:brand, :city,
+ * prices) that the seeder fills in from the main country. A module that is
+ * not installed is skipped by the helpers, so a solution still installs
+ * with one module less.
  */
 abstract class SolutionSeeder extends DemoSeeder
 {
@@ -48,11 +55,26 @@ abstract class SolutionSeeder extends DemoSeeder
 
     protected Solution $solution;
 
-    public function forSolution(Solution $solution): static
+    /** The country the site is set in. */
+    protected Country $country;
+
+    /** @var array<string,array<string,mixed>> locale => what content/{locale}.php returns */
+    protected array $content = [];
+
+    /** @var array<string,string> placeholder => value, from the main country */
+    protected array $facts = [];
+
+    public function forSolution(Solution $solution, ?string $locale = null): static
     {
         $this->solution = $solution;
+        $this->country = Country::for($locale ?? (string) config('app.locale'));
 
         return $this;
+    }
+
+    public function country(): Country
+    {
+        return $this->country;
     }
 
     /**
@@ -71,6 +93,8 @@ abstract class SolutionSeeder extends DemoSeeder
             return false;
         }
 
+        $this->content = self::content($this->solution);
+        $this->facts = $this->facts();
         $this->prepareSite();
         $this->copyFiles($this->solution->file('demo'));
         $this->fill();
@@ -79,27 +103,160 @@ abstract class SolutionSeeder extends DemoSeeder
     }
 
     /**
-     * The languages of the solution, the first one the default, and the
+     * The texts of a solution, locale => content/{locale}.php; English is
+     * always there.
+     *
+     * @return array<string,array<string,mixed>>
+     */
+    public static function content(Solution $solution): array
+    {
+        $content = [];
+
+        foreach (Country::LOCALES as $locale) {
+            $file = $solution->file("content/{$locale}.php");
+
+            if (is_file($file)) {
+                $content[$locale] = require $file;
+            }
+        }
+
+        return $content;
+    }
+
+    /**
+     * The placeholders every text may use. A solution adds its own.
+     *
+     * @return array<string,string>
+     */
+    protected function facts(): array
+    {
+        $main = $this->main();
+
+        return [
+            ':brand' => (string) ($main['brand'] ?? $this->solution->brand),
+            ':city' => $this->country->city,
+            ':phone' => $this->country->phone(40),
+            ':email' => $this->country->email('office', (string) ($main['company'] ?? $this->solution->name)),
+            ':address' => str_replace("\n", ', ', $this->country->address(0)),
+        ];
+    }
+
+    /**
+     * The main locale's texts: the business as it is in its country.
+     *
+     * @return array<string,mixed>
+     */
+    protected function main(): array
+    {
+        return $this->content[$this->country->locale] ?? $this->content['en'] ?? [];
+    }
+
+    /**
+     * A text in every language there is a file for, by its key in the
+     * files (`areas.ip`, `faq.name`), with the placeholders filled in:
+     * content language => text. A language whose file lacks the key is left
+     * out, and the site shows the main language there.
+     *
+     * @param  array<string,string>  $facts  more placeholders
+     * @return array<string,mixed>
+     */
+    protected function translated(string $key, array $facts = []): array
+    {
+        $texts = [];
+
+        foreach ($this->locales() as $locale) {
+            $text = Arr::get($this->content[$locale] ?? [], $key);
+
+            if ($text !== null && $text !== '' && $text !== []) {
+                $texts[Country::languageOf($locale)] = $this->fillIn($text, $facts);
+            }
+        }
+
+        return $texts;
+    }
+
+    /**
+     * A list per language turned into a language per item: the questions
+     * of a FAQ, [language => [q1, q2]] into [[language => q1], [language => q2]].
+     * Items a language lacks are left out of it.
+     *
+     * @param  array<string,array<int,mixed>>  $byLanguage
+     * @return array<int,array<string,mixed>>
+     */
+    protected static function perItem(array $byLanguage): array
+    {
+        $items = [];
+
+        foreach ($byLanguage as $language => $list) {
+            foreach (array_values($list) as $index => $item) {
+                $items[$index][$language] = $item;
+            }
+        }
+
+        return $items;
+    }
+
+    /**
+     * A text of the main language only, filled in: the address of an
+     * office, a legal page, a review.
+     *
+     * @param  array<string,string>  $facts
+     */
+    protected function mainText(string $key, array $facts = []): mixed
+    {
+        return $this->fillIn(Arr::get($this->main(), $key) ?? Arr::get($this->content['en'] ?? [], $key), $facts);
+    }
+
+    /**
+     * @param  array<string,string>  $facts
+     */
+    protected function fillIn(mixed $text, array $facts = []): mixed
+    {
+        if (is_array($text)) {
+            return array_map(fn (mixed $part): mixed => $this->fillIn($part, $facts), $text);
+        }
+
+        return is_string($text) ? strtr($text, [...$this->facts, ...$facts]) : $text;
+    }
+
+    /**
+     * The locales of the site, the main one first.
+     *
+     * @return array<int,string>
+     */
+    protected function locales(): array
+    {
+        return array_values(array_unique([$this->country->locale, ...array_keys($this->content)]));
+    }
+
+    /**
+     * Every language there are texts for, the main one the default, and the
      * brand as the default site's name.
      */
     protected function prepareSite(): void
     {
-        $names = ['en' => 'English', 'de' => 'Deutsch', 'ru' => 'Русский', 'fr' => 'Français', 'es' => 'Español', 'it' => 'Italiano', 'pl' => 'Polski', 'uk' => 'Українська'];
-        $languages = $this->solution->languages;
+        $names = (array) config('atrium.locales', []);
+        $languages = [];
 
-        foreach ($languages as $sort => $code) {
-            Language::query()->firstOrCreate(['code' => $code], ['name' => $names[$code] ?? strtoupper($code), 'active' => true, 'sort' => ($sort + 1) * 100]);
+        foreach ($this->locales() as $sort => $locale) {
+            $code = Country::languageOf($locale);
+            $languages[] = $code;
+            $language = Language::query()->firstOrNew(['code' => $code], ['name' => $names[$locale] ?? strtoupper($code)]);
+            // The main language first, in the switcher too.
+            $language->sort = ($sort + 1) * 10;
+            $language->active = true;
+            $language->save();
         }
 
         Language::query()->where('code', $languages[0])->update(['is_default' => true]);
         Language::query()->where('code', '!=', $languages[0])->update(['is_default' => false]);
 
         $site = app(Sites::class)->default();
-        $site->forceFill(array_filter([
-            'name' => $this->solution->brand ?: null,
+        $site->forceFill([
+            'name' => $this->facts[':brand'] ?: $this->solution->brand,
             'languages' => $languages,
             'default_language' => $languages[0],
-        ]))->save();
+        ])->save();
 
         app(Sites::class)->flush();
         app(ContentLanguages::class)->flush();
