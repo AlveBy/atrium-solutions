@@ -1,0 +1,65 @@
+{
+    "name": "alveby/atrium-solutions",
+    "description": "Ready-made sites for Atrium: a law firm, an agency, a charity and more, each installed in one command with its modules, look and content",
+    "type": "library",
+    "license": "MIT",
+    "homepage": "https://github.com/AlveBy/atrium",
+    "support": {
+        "issues": "https://github.com/AlveBy/atrium/issues",
+        "source": "https://github.com/AlveBy/atrium"
+    },
+    "keywords": [
+        "laravel",
+        "admin",
+        "cms",
+        "site templates",
+        "starter",
+        "multisite",
+        "i18n"
+    ],
+    "require": {
+        "php": "^8.3",
+        "illuminate/support": "^13.0",
+        "alveby/atrium": "^0.1",
+        "alveby/atrium-theme": "^0.1"
+    },
+    "require-dev": {
+        "alveby/atrium-faq": "^0.1",
+        "alveby/atrium-forms": "^0.1",
+        "alveby/atrium-news": "^0.1",
+        "alveby/atrium-pages": "^0.1",
+        "alveby/atrium-reviews": "^0.1",
+        "alveby/atrium-stores": "^0.1",
+        "alveby/atrium-team": "^0.1",
+        "orchestra/testbench": "^11.0",
+        "phpunit/phpunit": "^12.5"
+    },
+    "suggest": {
+        "alveby/atrium-pages": "Static pages of every solution",
+        "alveby/atrium-news": "News of most solutions",
+        "alveby/atrium-forms": "Contact and request forms",
+        "alveby/atrium-team": "People: lawyers, designers, volunteers"
+    },
+    "autoload": {
+        "psr-4": {
+            "Atrium\\Solutions\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Atrium\\Solutions\\Tests\\": "tests/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Atrium\\Solutions\\SolutionsServiceProvider"
+            ]
+        },
+        "branch-alias": {
+            "dev-main": "0.1.x-dev"
+        }
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
+}
