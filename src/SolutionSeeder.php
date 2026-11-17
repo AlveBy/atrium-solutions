@@ -12,7 +12,6 @@ namespace Atrium\Solutions;
 use Atrium\Admin\Models\Language;
 use Atrium\Admin\Modules\DemoSeeder;
 use Atrium\Admin\Modules\Soft;
-use Atrium\Admin\Support\ContentLanguages;
 use Atrium\Admin\Support\Sites;
 use Atrium\Solutions\Support\Country;
 use Illuminate\Database\Eloquent\Model;
@@ -67,7 +66,7 @@ abstract class SolutionSeeder extends DemoSeeder
     public function forSolution(Solution $solution, ?string $locale = null): static
     {
         $this->solution = $solution;
-        $this->country = Country::for($locale ?? (string) config('app.locale'));
+        $this->country = Country::for($locale ?? config('app.locale'));
 
         return $this;
     }
@@ -133,7 +132,7 @@ abstract class SolutionSeeder extends DemoSeeder
         $main = $this->main();
 
         return [
-            ':brand' => (string) ($main['brand'] ?? $this->solution->brand),
+            ':brand' => $main['brand'] ?? $this->solution->brand,
             ':city' => $this->country->city,
             ':phone' => $this->country->phone(40),
             ':email' => $this->country->email('office', (string) ($main['company'] ?? $this->solution->name)),
@@ -235,7 +234,7 @@ abstract class SolutionSeeder extends DemoSeeder
      */
     protected function prepareSite(): void
     {
-        $names = (array) config('atrium.locales', []);
+        $names = config('atrium.locales', []);
         $languages = [];
 
         foreach ($this->locales() as $sort => $locale) {
@@ -258,8 +257,6 @@ abstract class SolutionSeeder extends DemoSeeder
             'default_language' => $languages[0],
         ])->save();
 
-        app(Sites::class)->flush();
-        app(ContentLanguages::class)->flush();
     }
 
     /**
@@ -427,7 +424,6 @@ abstract class SolutionSeeder extends DemoSeeder
         foreach ($questions as $index => $texts) {
             (self::QUESTION)::query()->create([
                 'category_id' => $group->getKey(),
-                'site_id' => $group->getAttribute('site_id'),
                 'question' => array_map(static fn (array $text): string => $text[0], $texts),
                 'answer' => array_map(static fn (array $text): string => '<p>'.$text[1].'</p>', $texts),
                 'sort' => ($index + 1) * 10,

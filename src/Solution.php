@@ -89,8 +89,8 @@ final class Solution
         // has files for, and names its modules in their `labels`.
         $languages = [];
         $labels = array_filter((array) ($data['labels'] ?? []), 'is_array');
-        $label = (array) ($data['label'] ?? [$data['name']]);
-        $description = (array) ($data['description'] ?? []);
+        $label = $strings($data['label'] ?? [$data['name']]);
+        $description = $strings($data['description'] ?? []);
         $brands = [];
 
         foreach (Support\Country::LOCALES as $locale) {
@@ -99,14 +99,14 @@ final class Solution
             if (is_file($texts)) {
                 $languages[] = $locale;
                 $content = require $texts;
-                $labels[$locale] = [...(array) ($content['labels'] ?? []), ...($labels[$locale] ?? [])];
+                $labels[$locale] = [...($content['labels'] ?? []), ...($labels[$locale] ?? [])];
                 $label[$locale] = $content['catalogue']['label'] ?? $label[$locale] ?? null;
                 $description[$locale] = $content['catalogue']['description'] ?? $description[$locale] ?? null;
                 $brands[$locale] = $content['brand'] ?? null;
             }
         }
 
-        $languages = $languages ?: ($data['languages'] ?? ['en']);
+        $languages = $languages ?: ($data['languages'] ?? []);
 
         return new self(
             name: $data['name'],
@@ -122,7 +122,7 @@ final class Solution
             palette: $strings($data['palette'] ?? []),
             fonts: array_values($strings($data['fonts'] ?? [])),
             screenshots: $strings($data['screenshots'] ?? []),
-            pages: array_values($strings($data['pages'] ?? ['/'])) ?: ['/'],
+            pages: array_values($strings($data['pages'] ?? [])) ?: ['/'],
             tags: array_values($strings($data['tags'] ?? [])),
             urls: $strings($data['urls'] ?? []),
             menu: array_values(array_map($strings, array_filter((array) ($data['menu'] ?? []), 'is_array'))),

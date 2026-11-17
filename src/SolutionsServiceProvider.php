@@ -33,9 +33,6 @@ final class SolutionsServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
-        $this->loadTranslationsFrom(__DIR__.'/../lang', 'atrium-solutions');
-        $this->loadViewsFrom(__DIR__.'/../resources/views', 'atrium-solutions');
-
         // The installed solution's names for the modules: "Lawyers" for the
         // team, in the admin and on the site.
         $this->callAfterResolving('translator', function (Translator $translator): void {
@@ -86,7 +83,7 @@ final class SolutionsServiceProvider extends ServiceProvider
 
         foreach ($solution->urls as $class => $prefix) {
             $rule = $config->get('atrium.public_urls.'.$class)
-                ?? $this->app->make(Modules::class)->ownerOf($class)?->publicUrls[$class]
+                ?? $this->app->make(Modules::class)->ownerOf($class)->publicUrls[$class]
                 ?? [];
 
             if (is_array($rule)) {

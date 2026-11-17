@@ -48,8 +48,8 @@ final class LawSeeder extends SolutionSeeder
             ':partner' => $this->country->person(1, false),
             ':partner_first' => $this->country->firstName(1, false),
             ':founded' => '2011',
-            ':fee_hour' => $this->country->money(320),
-            ':fee_review' => $this->country->money(450),
+            // US dollars at US prices, in the country's currency and price list.
+            ...array_map($this->country->money(...), require $this->solution->file('prices.php')),
         ];
     }
 
@@ -67,9 +67,9 @@ final class LawSeeder extends SolutionSeeder
 
         $this->page('about', $this->translated('about'), sort: 300);
 
-        foreach (array_keys($this->main()['legal'] ?? []) as $index => $code) {
+        foreach (array_keys($this->main()['legal'] ?? []) as $code) {
             [$name, $content] = $this->mainText("legal.{$code}");
-            $this->page($code, [$this->country->language() => [$name, $content]], sort: 900 + $index * 10);
+            $this->page($code, [$this->country->language() => [$name, $content]], sort: 900);
         }
 
         $departments = [
@@ -77,7 +77,7 @@ final class LawSeeder extends SolutionSeeder
             'associates' => $this->department($this->translated('departments.associates'), 200),
         ];
 
-        $company = (string) ($this->main()['company'] ?? 'firm');
+        $company = $this->main()['company'] ?? 'firm';
 
         foreach (self::PEOPLE as $index => [$key, $department, $photo, $woman]) {
             $name = $this->country->person($index, $woman);
@@ -89,10 +89,10 @@ final class LawSeeder extends SolutionSeeder
             ]);
         }
 
-        $dates = ['remote-work' => '2026-10-28', 'arbitration' => '2026-09-15', 'trademarks' => '2026-08-02', 'new-office' => '2026-06-20'];
+        $dates = ['remote-work' => '2026-10-28 09:00:00', 'arbitration' => '2026-09-15 09:00:00', 'trademarks' => '2026-08-02 09:00:00', 'new-office' => '2026-06-20 09:00:00'];
 
         foreach ($dates as $code => $date) {
-            $this->news($code, $date.' 09:00:00', $this->translated("news.{$code}"));
+            $this->news($code, $date, $this->translated("news.{$code}"));
         }
 
         foreach ([0, 1] as $index) {
@@ -133,8 +133,8 @@ final class LawSeeder extends SolutionSeeder
 
         $reviewers = [$this->country->person(6, true), $this->country->person(7, false), $this->country->person(4, false)];
 
-        foreach ((array) $this->mainText('reviews') as $index => [$author, $text]) {
-            $this->review(strtr($author, [':name' => $reviewers[$index] ?? $reviewers[0]]), 5, $text, ['2026-10-02', '2026-09-20', '2026-07-11'][$index % 3].' 10:00:00');
+        foreach ($this->mainText('reviews') as $index => [$author, $text]) {
+            $this->review(strtr($author, [':name' => $reviewers[$index]]), 5, $text, ['2026-10-02 10:00:00', '2026-09-20 10:00:00', '2026-07-11 10:00:00'][$index]);
         }
     }
 }

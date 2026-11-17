@@ -19,16 +19,18 @@ final class Env
     {
         $file ??= app()->environmentFilePath();
 
-        if (! is_file($file) || ! is_writable($file)) {
+        // Writable but not readable is as good as missing: what is in it would be lost.
+        $env = is_file($file) && is_writable($file) ? @file_get_contents($file) : false;
+
+        if ($env === false) {
             return false;
         }
 
         $line = $key.'='.(preg_match('/^[A-Za-z0-9_.\/:-]*$/', $value) ? $value : '"'.addcslashes($value, '"\\').'"');
-        $env = (string) file_get_contents($file);
         $pattern = '/^'.preg_quote($key, '/').'=.*$/m';
 
         $env = preg_match($pattern, $env)
-            ? (string) preg_replace($pattern, str_replace(['\\', '$'], ['\\\\', '\\$'], $line), $env)
+            ? preg_replace_callback($pattern, static fn (): string => $line, $env) ?? $env
             : rtrim($env, "\n").($env === '' ? '' : "\n").$line."\n";
 
         return file_put_contents($file, $env) !== false;

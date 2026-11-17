@@ -53,14 +53,14 @@ final class Menu
      */
     private function page(string $code): ?array
     {
-        if (! Soft::available(self::PAGE) || ! class_exists('Atrium\Pages\PageTree')) {
+        if (! Soft::available(self::PAGE)) {
             return null;
         }
 
         $page = self::PAGE::query()->where('code', $code)->where('active', true)->whereNull('parent_id')->first();
         $url = $page === null ? null : app('Atrium\Pages\PageTree')->url($page);
 
-        return $url === null ? null : ['label' => (string) $page->getAttribute('name'), 'url' => $url, 'prefix' => null];
+        return $url === null ? null : ['label' => $page->getAttribute('name'), 'url' => $url, 'prefix' => null];
     }
 
     /**
