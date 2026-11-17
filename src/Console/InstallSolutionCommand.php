@@ -16,6 +16,7 @@ use Atrium\Solutions\Solutions;
 use Atrium\Solutions\SolutionSeeder;
 use Atrium\Solutions\Support\Env;
 use Illuminate\Console\Command;
+use Illuminate\Console\View\TaskResult;
 
 /**
  * Turns a project into one of the ready-made sites: its modules on (and the
@@ -45,7 +46,7 @@ final class InstallSolutionCommand extends Command
             return self::FAILURE;
         }
 
-        $missing = array_values(array_filter($solution->modules, static fn (string $module): bool => $modules->find($module) === null));
+        $missing = array_filter($solution->modules, static fn (string $module): bool => $modules->find($module) === null);
 
         if ($missing !== []) {
             $this->components->error('The '.Solution::text($solution->label, 'en').' needs module packages Composer does not have.');
@@ -56,22 +57,22 @@ final class InstallSolutionCommand extends Command
 
         foreach ($solution->modules as $module) {
             if (! $modules->isInstalled($module)) {
-                $this->components->task("Installing {$module}", fn (): bool => $modules->install($modules->find($module)));
+                $this->step("Installing {$module}", fn (): bool => $modules->install($modules->find($module)));
             }
         }
 
         if (! $this->option('keep-modules')) {
             foreach (array_diff(array_keys($modules->installed()), $solution->modules) as $module) {
-                $this->components->task("Turning off {$module} (its data stays)", fn (): bool => $modules->remove($module));
+                $this->step("Turning off {$module} (its data stays)", fn (): bool => $modules->remove($module));
             }
         }
 
-        $this->components->task('Running migrations', fn (): bool => $this->callSilently('migrate', ['--force' => true]) === 0);
+        $this->step('Running migrations', fn (): bool => $this->callSilently('migrate', ['--force' => true]) === 0);
 
         if ($solution->skin !== null && ! $this->skinExists($solution->skin)) {
             $this->components->warn("The {$solution->skin} skin is not in this theme yet: the site keeps the theme's own look.");
         } elseif ($solution->skin !== null) {
-            $this->components->task("Wearing the {$solution->skin} skin", function () use ($solution): bool {
+            $this->step("Wearing the {$solution->skin} skin", function () use ($solution): bool {
                 config(['atrium-theme.skin' => $solution->skin]);
 
                 return Env::set('ATRIUM_THEME_SKIN', $solution->skin);
@@ -100,8 +101,8 @@ final class InstallSolutionCommand extends Command
                 return self::FAILURE;
             }
 
-            $seeded = false;
-            $this->components->task('Filling the site', function () use ($seeder, $solution, &$seeded): bool {
+            $seeded = null;
+            $this->step('Filling the site', function () use ($seeder, $solution, &$seeded): bool {
                 $seeded = $seeder->forSolution($solution, $this->option('locale') ?: null)->setContainer($this->laravel)->__invoke() !== false;
 
                 return true;
@@ -118,10 +119,22 @@ final class InstallSolutionCommand extends Command
         return self::SUCCESS;
     }
 
+    /**
+     * A step with its result written next to it: the framework takes a
+     * result of this kind, not a bool, for a step that failed.
+     *
+     * @param  callable():bool  $step
+     */
+    private function step(string $title, callable $step): void
+    {
+        $this->components->task($title, fn (): int => $step() ? TaskResult::Success->value : TaskResult::Failure->value);
+    }
+
     private function skinExists(string $name): bool
     {
         $skins = 'Atrium\\Theme\\Skins\\Skins';
 
-        return class_exists($skins) && $this->laravel->make($skins)->find($name) !== null;
+        // The theme's skins may be a class it ships or something it bound.
+        return ($this->laravel->bound($skins) || class_exists($skins)) && $this->laravel->make($skins)->find($name) !== null;
     }
 }
