@@ -153,7 +153,7 @@ final class ProviderTest extends TestCase
 
         $this->assertSame('Team', trans('atrium-team::team.modules.members'));
         $this->assertSame('team', config('atrium.public_urls.'.Member::class.'.prefix'));
-        $this->assertFalse($this->app['events']->hasListeners('composing: atrium-theme::skins.*'));
+        $this->assertFalse($this->app['events']->hasListeners('composing: atrium-solutions::skins.*'));
     }
 
     public function test_the_solution_names_the_modules_in_its_language_and_in_the_site_s(): void
@@ -211,7 +211,7 @@ final class ProviderTest extends TestCase
     {
         $this->start(['menu' => [['page' => 'practice']]]);
 
-        $this->assertTrue($this->app['events']->hasListeners('composing: atrium-theme::skins.*'));
+        $this->assertTrue($this->app['events']->hasListeners('composing: atrium-solutions::skins.*'));
         $this->assertTrue($this->app['events']->hasListeners('composing: atrium-theme::layout'));
     }
 
@@ -219,6 +219,6 @@ final class ProviderTest extends TestCase
     {
         $this->start(['menu' => []]);
 
-        $this->assertFalse($this->app['events']->hasListeners('composing: atrium-theme::skins.*'));
+        $this->assertFalse($this->app['events']->hasListeners('composing: atrium-solutions::skins.*'));
     }
 }
