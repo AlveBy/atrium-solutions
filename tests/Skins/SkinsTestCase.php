@@ -7,7 +7,7 @@
 
 declare(strict_types=1);
 
-namespace Atrium\Theme\Tests\Skins;
+namespace Atrium\Solutions\Tests\Skins;
 
 use Atrium\Admin\AtriumServiceProvider;
 use Atrium\Admin\Support\PublicUrl;
@@ -18,9 +18,10 @@ use Atrium\Forms\FormsServiceProvider;
 use Atrium\News\NewsServiceProvider;
 use Atrium\Pages\PagesServiceProvider;
 use Atrium\Reviews\ReviewsServiceProvider;
+use Atrium\Solutions\Tests\Skins\Fixtures\SkinContent;
 use Atrium\Stores\StoresServiceProvider;
-use Atrium\Theme\Tests\Skins\Fixtures\SkinContent;
 use Atrium\Theme\ThemeServiceProvider;
+use Illuminate\Filesystem\Filesystem;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Foundation\Testing\RefreshDatabaseState;
 use Illuminate\Support\Facades\Storage;
@@ -34,6 +35,8 @@ use Tighten\Ziggy\ZiggyServiceProvider;
 abstract class SkinsTestCase extends Orchestra
 {
     use RefreshDatabase;
+
+    private string $public = '';
 
     /**
      * Every module a skin's home page can show.
@@ -106,8 +109,21 @@ abstract class SkinsTestCase extends Orchestra
     {
         parent::setUp();
 
+        // The skeleton's public folder is shared by the whole suite and another
+        // test may have published the fonts into it: each test gets an empty one.
+        $this->public = sys_get_temp_dir().'/atrium-skins-public-'.bin2hex(random_bytes(4));
+        mkdir($this->public);
+        $this->app->usePublicPath($this->public);
+
         Storage::fake('public');
         PublicUrl::forgetPaths();
+    }
+
+    protected function tearDown(): void
+    {
+        (new Filesystem)->deleteDirectory($this->public);
+
+        parent::tearDown();
     }
 
     /**

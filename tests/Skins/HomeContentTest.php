@@ -7,7 +7,7 @@
 
 declare(strict_types=1);
 
-namespace Atrium\Theme\Tests\Skins;
+namespace Atrium\Solutions\Tests\Skins;
 
 use Atrium\Admin\Support\PublicUrl;
 use Atrium\Theme\Pages;

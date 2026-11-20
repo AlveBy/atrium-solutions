@@ -24,6 +24,8 @@
         "alveby/atrium-theme": "^0.1"
     },
     "require-dev": {
+        "alveby/atrium-brands": "^0.1",
+        "alveby/atrium-catalog": "^0.1",
         "alveby/atrium-faq": "^0.1",
         "alveby/atrium-forms": "^0.1",
         "alveby/atrium-news": "^0.1",

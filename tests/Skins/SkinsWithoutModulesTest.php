@@ -7,7 +7,7 @@
 
 declare(strict_types=1);
 
-namespace Atrium\Theme\Tests\Skins;
+namespace Atrium\Solutions\Tests\Skins;
 
 use Atrium\Theme\Pages;
 use Atrium\Theme\RecordView;

@@ -7,7 +7,7 @@
 
 declare(strict_types=1);
 
-namespace Atrium\Theme\Tests\Skins\Fixtures;
+namespace Atrium\Solutions\Tests\Skins\Fixtures;
 
 use Atrium\Admin\Models\Language;
 use Atrium\Admin\Models\Site;
